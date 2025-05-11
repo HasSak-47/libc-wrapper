@@ -1,12 +1,15 @@
-use libc::{cc_t, speed_t, tcflag_t, tcgetattr, tcsetattr, termios};
 use bitflags::bitflags;
+use libc::{cc_t, speed_t, tcflag_t, tcgetattr, tcsetattr, termios};
 use std::{mem::zeroed, os::fd};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Unknown Termios Error")]
-    Unknown,
+    #[error("failed to set term attributes")]
+    TermiosSet,
+
+    #[error("failed to get term attributes")]
+    TermiosGet,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -88,7 +91,7 @@ bitflags! {
         const SendSIGTTOU= libc::TOSTOP;
         const ReprintQueue = libc::PENDIN;
         const UserDefProcess = libc::IEXTEN;
-        
+
         // const XCASE = libc::XCASE;
         // const DEFECHO = libc::DEFECHO;
     }
@@ -125,7 +128,7 @@ impl Termios {
         let fd = fd.as_raw_fd();
         unsafe {
             if tcsetattr(fd, actions.bits(), &t) == -1 {
-                return Err(Error::Unknown);
+                return Err(Error::TermiosSet);
             }
         }
 
@@ -141,7 +144,7 @@ impl Termios {
 
             let mut t: termios = zeroed();
             if tcgetattr(fd, &mut t) == -1 {
-                return Err(Error::Unknown);
+                return Err(Error::TermiosGet);
             }
 
             return Ok(Termios {
