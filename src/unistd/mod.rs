@@ -1,6 +1,10 @@
 use crate::error::LibcResult;
 
-use std::{os::fd::AsRawFd, path::{Path, PathBuf}, str::FromStr};
+use std::{
+    os::{fd::AsRawFd, unix::ffi::OsStrExt},
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use crate::error::LibcError;
 
@@ -23,7 +27,7 @@ pub fn get_cwd() -> LibcResult<PathBuf> {
             return Err(LibcError::GenericError("could not get cwd"));
         }
 
-       return Ok(PathBuf::from_str(std::str::from_utf8(&buffer)?)?);
+        return Ok(PathBuf::from_str(std::str::from_utf8(&buffer)?)?);
     }
 }
 
@@ -43,11 +47,14 @@ pub fn get_host_name() -> LibcResult<String> {
     }
 }
 
-pub fn change_cwd<P>(path: P) -> LibcResult<()> where
+pub fn change_cwd<P>(path: P) -> LibcResult<()>
+where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-    unsafe{
+    unsafe {
+        let p = path.as_os_str().as_bytes().as_ptr();
+        if libc::chdir(p as *const i8) != 0{ }
     }
     Ok(())
 }
