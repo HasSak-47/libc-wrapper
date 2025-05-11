@@ -17,15 +17,14 @@ pub struct Passwd {
 }
 
 #[derive(Error, Clone, Debug)]
-enum PWDError{
-}
+enum PWDError {}
 
 pub fn get_passwd() -> LibcResult<Passwd> {
     unsafe {
         let uid = geteuid();
         let gid = getgid();
         let pwd = getpwuid(uid);
-        if pwd.is_null() { }
+        if pwd.is_null() {}
 
         let name = CStr::from_ptr((*pwd).pw_name).to_str()?.to_string();
         let dir = CStr::from_ptr((*pwd).pw_dir).to_str()?.to_string();
