@@ -1,7 +1,6 @@
 use std::{ffi::CStr, path::PathBuf};
 
 use libc::{geteuid, getgid, getpwuid};
-use thiserror::Error;
 
 use crate::error::{LibcError, LibcResult};
 
@@ -16,15 +15,14 @@ pub struct Passwd {
     pub shell: String, /* unimplemented */
 }
 
-#[derive(Error, Clone, Debug)]
-enum PWDError {}
-
 pub fn get_passwd() -> LibcResult<Passwd> {
     unsafe {
         let uid = geteuid();
         let gid = getgid();
         let pwd = getpwuid(uid);
-        if pwd.is_null() {}
+        if pwd.is_null() {
+            return Err(LibcError::Undefined);
+        }
 
         let name = CStr::from_ptr((*pwd).pw_name).to_str()?.to_string();
         let dir = CStr::from_ptr((*pwd).pw_dir).to_str()?.to_string();

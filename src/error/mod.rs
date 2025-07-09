@@ -2,13 +2,13 @@ use std::convert::Infallible;
 use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Default)]
-pub enum LibcError{
+pub enum LibcError {
     #[error("there was no host name found")]
     GenericError(&'static str),
 
     // holy fuck this is shit
     #[error("str utf-8")]
-    StrFromUtf8 (#[from] std::str::Utf8Error),
+    StrFromUtf8(#[from] std::str::Utf8Error),
 
     #[error("string utf-8")]
     StringFromUtf8(#[from] std::string::FromUtf8Error),

@@ -54,7 +54,21 @@ where
     let path = path.as_ref();
     unsafe {
         let p = path.as_os_str().as_bytes().as_ptr();
-        if libc::chdir(p as *const i8) != 0{ }
+        if libc::chdir(p as *const i8) != 0 {
+            return Err(LibcError::Undefined);
+        }
     }
     Ok(())
+}
+
+pub type Pid = libc::pid_t;
+
+pub fn fork() -> LibcResult<Pid> {
+    unsafe {
+        let pid: libc::pid_t = libc::fork();
+        if pid != -1 {
+            return Err(LibcError::Undefined);
+        }
+        return Ok(pid);
+    }
 }
