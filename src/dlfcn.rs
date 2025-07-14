@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use std::{
     ffi::{c_char, c_void, CString, NulError},
-    marker::{PhantomData, Tuple},
+    marker::{FnPtr, PhantomData, Tuple},
     path::{Path, PathBuf},
 };
 use thiserror::Error;
@@ -39,32 +39,6 @@ pub struct DynamicLink {
     handler: *mut c_void,
 }
 
-pub struct CFunc<Params: Tuple, RetType> {
-    loc: *mut c_void,
-    pfunc: PhantomData<RetType>,
-    pparam: PhantomData<Params>,
-}
-
-impl<Params: Tuple, RetType> CFunc<Params, RetType> {
-    pub fn new(loc: *mut c_void) -> Self {
-        return Self {
-            loc,
-            pparam: PhantomData {},
-            pfunc: PhantomData {},
-        };
-    }
-
-    pub fn call(&mut self, params: Params) -> RetType {
-        unsafe {
-            let f: extern "C" fn(Params) -> RetType = std::mem::transmute(self.loc);
-            return f(params);
-        }
-    }
-    pub unsafe fn leak(&mut self) -> *mut c_void {
-        return self.loc;
-    }
-}
-
 impl DynamicLink {
     #[allow(dead_code)]
     pub fn open<P>(path: P, flag: DynamicLinkArg) -> Result<Self, Error>
@@ -84,20 +58,33 @@ impl DynamicLink {
         }
     }
 
-    pub fn get_function<Params: Tuple, RetType, S: AsRef<str>>(
+    pub unsafe fn get_function<RetType, S>(
         &mut self,
         name: S,
-    ) -> Result<CFunc<Params, RetType>, Error> {
-        let name = name.as_ref();
-        let cstr = CString::new(name)?;
+    ) -> Result<extern "C" fn(...) -> RetType, Error>
+    where
+        S: AsRef<str>,
+    {
+        let cstr = CString::new(name.as_ref())?;
 
         unsafe {
-            let loc = libc::dlsym(self.handler, cstr.as_ptr());
-            println!("loc: {loc:?}");
-            if loc.is_null() {
+            let handler = libc::dlsym(self.handler, cstr.as_ptr());
+            if handler.is_null() {
                 return Err(Error::SymbolNotFound);
             }
-            return Ok(CFunc::new(loc));
+            return Ok(std::mem::transmute(handler));
+        }
+    }
+
+    pub unsafe fn get_variable<T, S: AsRef<str>>(&mut self, name: S) -> Result<&mut T, Error> {
+        let cstr = CString::new(name.as_ref())?;
+
+        unsafe {
+            let handler = libc::dlsym(self.handler, cstr.as_ptr());
+            if handler.is_null() {
+                return Err(Error::SymbolNotFound);
+            }
+            return Ok(&mut *(handler as *mut T));
         }
     }
 }
