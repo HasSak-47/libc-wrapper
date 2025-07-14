@@ -1,6 +1,9 @@
 use bitflags::bitflags;
 use libc::{cc_t, speed_t, tcflag_t, tcgetattr, tcsetattr, termios};
-use std::{mem::zeroed, os::fd};
+use std::{
+    mem::zeroed,
+    os::fd::{self, AsRawFd},
+};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -112,7 +115,7 @@ pub struct Termios {
 impl Termios {
     pub fn set_attr<F>(&self, fd: F, actions: Actions) -> self::Result<()>
     where
-        F: fd::AsRawFd,
+        F: fd::AsFd,
     {
         let t = termios {
             c_iflag: self.input.bits(),
@@ -125,7 +128,7 @@ impl Termios {
             c_ospeed: self.out_speed,
         };
 
-        let fd = fd.as_raw_fd();
+        let fd = fd.as_fd().as_raw_fd();
         unsafe {
             if tcsetattr(fd, actions.bits(), &t) == -1 {
                 return Err(Error::TermiosSet);
