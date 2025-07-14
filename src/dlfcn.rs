@@ -1,8 +1,7 @@
 use bitflags::bitflags;
 use std::{
-    ffi::{c_char, c_void, CString, NulError},
-    marker::{FnPtr, PhantomData, Tuple},
-    path::{Path, PathBuf},
+    ffi::{c_void, CString, NulError},
+    path::Path,
 };
 use thiserror::Error;
 
