@@ -8,13 +8,6 @@ use std::{
 
 use crate::error::LibcError;
 
-pub fn is_a_tty<F: AsRawFd>(fd: F) -> bool {
-    use libc::isatty;
-    let fd = fd.as_raw_fd();
-
-    unsafe { isatty(fd) == 0 }
-}
-
 pub fn get_cwd() -> LibcResult<PathBuf> {
     unsafe {
         use libc::{fpathconf, getcwd, _PC_PATH_MAX};

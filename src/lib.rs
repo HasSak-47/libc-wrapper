@@ -1,3 +1,4 @@
+pub mod dlfcn;
 pub mod error;
 pub mod pwd;
 pub mod sys;
