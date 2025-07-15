@@ -1,28 +1,19 @@
 use std::ffi::c_int;
 
 use anyhow::Result;
-use cwrapper::dlfcn::{self, CFunc};
+use cwrapper::dlfcn::{DynamicLink, DynamicLinkArg};
 
 #[test]
 fn test_0() -> Result<()> {
-    let mut link = dlfcn::DynamicLink::open("./tests/test.so", dlfcn::DynamicLinkArg::LAZY)?;
-    let mut function: CFunc<(c_int, c_int, c_int), ()> = link.get_function("test_0")?;
-    function.call((10, 11, 12));
-
-    return Ok(());
-}
-
-#[test]
-fn test_1() -> Result<()> {
-    let mut link = dlfcn::DynamicLink::open("./tests/test.so", dlfcn::DynamicLinkArg::LAZY)?;
-    let mut function: CFunc<(c_int, c_int, c_int), c_int> = link.get_function("test_1")?;
+    let mut link = DynamicLink::open("./tests/test.so", DynamicLinkArg::LAZY)?;
     unsafe {
-        let f = function.leak();
-        let b = f((10, 11, 12));
-        assert_eq!(b, 10 + 11 + 12, "b = 10 + 11 + 12");
+        let test_0: extern "C" fn(c_int, c_int, c_int) -> c_int =
+            std::mem::transmute(link.get_function::<c_int, &str>("test_0")?);
+        let test_1: extern "C" fn(c_int, c_int, c_int) -> c_int =
+            std::mem::transmute(link.get_function::<c_int, &str>("test_1")?);
+        test_0(10, 11, 12);
+        test_1(10, 11, 12);
     }
-    let a = function.call((1, 2, 3));
-    assert_eq!(a, 1 + 2 + 3, "a = 1 + 2 + 3");
 
     return Ok(());
 }
