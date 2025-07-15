@@ -140,10 +140,10 @@ impl Termios {
 
     pub fn get_attr<F>(fd: F) -> self::Result<Self>
     where
-        F: fd::AsRawFd,
+        F: fd::AsFd,
     {
         unsafe {
-            let fd = fd.as_raw_fd();
+            let fd = fd.as_fd().as_raw_fd();
 
             let mut t: termios = zeroed();
             if tcgetattr(fd, &mut t) == -1 {
