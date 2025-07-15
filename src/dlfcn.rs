@@ -15,11 +15,10 @@ bitflags! {
     }
 }
 
-#[derive(Error, Debug, Default)]
+#[derive(Error, Debug)]
 pub enum Error {
-    #[default]
-    #[error("could not load dynamic link")]
-    CouldNotLoad,
+    #[error("could not load dynamic link: {0}")]
+    CouldNotLoad(String),
 
     #[error("Symbol not found")]
     SymbolNotFound,
@@ -51,7 +50,8 @@ impl DynamicLink {
         unsafe {
             let handler = libc::dlopen(cstr.as_ptr(), flag.bits());
             if handler.is_null() {
-                return Err(Error::PathNotFound(String::from(str)));
+                let error = CString::from_raw(libc::dlerror());
+                return Err(Error::CouldNotLoad(error.to_str().unwrap().to_string()));
             }
             return Ok(Self { handler });
         }
